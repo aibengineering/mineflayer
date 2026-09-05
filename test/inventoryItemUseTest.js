@@ -35,6 +35,42 @@ for (const version of testedVersions) {
       })
     }
 
+    for (const entityStatus of [2, 29]) {
+      it(`keeps using an item when the bot receives unrelated status ${entityStatus}`, () => {
+        const bot = createBot(registry)
+        bot.activateItem()
+        bot._client.emit('entity_status', { entityId: bot.entity.id, entityStatus })
+        assert.strictEqual(bot.usingHeldItem, true)
+        bot.deactivateItem()
+        assert.strictEqual(bot.usingHeldItem, false)
+      })
+    }
+
+    it('clears item use when the bot receives its death status', () => {
+      const bot = createBot(registry)
+      bot.activateItem()
+      bot._client.emit('entity_status', { entityId: bot.entity.id, entityStatus: 3 })
+      assert.strictEqual(bot.usingHeldItem, false)
+    })
+
+    for (const adjacentBow of [false, true]) {
+      it(`cancels a draw by changing slots without releasing an arrow (adjacent bow: ${adjacentBow})`, () => {
+        const bot = createBot(registry)
+        require('../lib/plugins/simple_inventory')(bot)
+        const Item = require('prismarine-item')(registry)
+        bot.inventory.slots[36] = new Item(registry.itemsByName.bow.id, 1)
+        bot.inventory.slots[37] = adjacentBow ? new Item(registry.itemsByName.bow.id, 1) : null
+        const packets = []
+        bot._client.write = (name, data) => packets.push({ name, data })
+        bot.activateItem()
+        bot._client.emit('entity_status', { entityId: bot.entity.id, entityStatus: 2 })
+        bot.setQuickBarSlot(1)
+        bot.setQuickBarSlot(0)
+        assert.strictEqual(bot.usingHeldItem, false)
+        assert(!packets.some(p => p.name === 'block_dig' && p.data.status === 5))
+      })
+    }
+
     it('finishes consuming only when the bot receives its completion status', async () => {
       const bot = createBot(registry)
       const Item = require('prismarine-item')(registry)
