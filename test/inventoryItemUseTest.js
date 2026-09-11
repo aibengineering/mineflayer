@@ -71,6 +71,53 @@ for (const version of testedVersions) {
       })
     }
 
+    it('preserves main-hand use across repeated same-item stack updates', () => {
+      const bot = createBot(registry)
+      const Item = require('prismarine-item')(registry)
+      const type = registry.itemsByName.bow.id
+      bot.inventory.updateSlot(36, new Item(type, 1))
+      bot.activateItem()
+      bot.inventory.updateSlot(36, new Item(type, 2))
+      bot.updateHeldItem()
+      bot.updateHeldItem()
+      assert.strictEqual(bot.usingHeldItem, true)
+      bot.inventory.updateSlot(36, null)
+      assert.strictEqual(bot.usingHeldItem, false)
+    })
+
+    if (!registry.supportFeature('doesntHaveOffHandSlot')) {
+      for (const replacement of ['air', 'bow']) {
+        it(`preserves off-hand shield use until the shield is replaced with ${replacement}`, () => {
+          const bot = createBot(registry)
+          require('../lib/plugins/simple_inventory')(bot)
+          const Item = require('prismarine-item')(registry)
+          const shield = registry.itemsByName.shield.id
+          bot.inventory.updateSlot(45, new Item(shield, 1))
+          bot.activateItem(true)
+          const worn = new Item(shield, 1)
+          worn.nbt = { type: 'compound', name: '', value: { Damage: { type: 'int', value: 4 } } }
+          bot.inventory.updateSlot(45, worn)
+          bot.inventory.updateSlot(36, new Item(registry.itemsByName.bow.id, 1))
+          bot.setQuickBarSlot(1)
+          bot._client.emit('set_cooldown', { itemID: registry.itemsByName.bow.id })
+          assert.strictEqual(bot.usingHeldItem, true)
+          // An additional main-hand request cannot replace the active hand.
+          bot.activateItem()
+          bot.inventory.updateSlot(45, replacement === 'air' ? null : new Item(registry.itemsByName.bow.id, 1))
+          assert.strictEqual(bot.usingHeldItem, false)
+        })
+      }
+      it('ends off-hand use for a cooldown on its active item', () => {
+        const bot = createBot(registry)
+        const Item = require('prismarine-item')(registry)
+        const shield = registry.itemsByName.shield.id
+        bot.inventory.updateSlot(45, new Item(shield, 1))
+        bot.activateItem(true)
+        bot._client.emit('set_cooldown', { itemID: shield })
+        assert.strictEqual(bot.usingHeldItem, false)
+      })
+    }
+
     it('finishes consuming only when the bot receives its completion status', async () => {
       const bot = createBot(registry)
       const Item = require('prismarine-item')(registry)
