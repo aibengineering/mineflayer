@@ -31,7 +31,7 @@
     "prismarine-entity": "^2.5.0",
     "prismarine-item": "^1.17.0",
     "prismarine-nbt": "^2.0.0",
-    "prismarine-physics": "github:aibengineering/prismarine-physics#56a6794611069272653b14eb078a1454633f4eb3",
+    "prismarine-physics": "github:aibengineering/prismarine-physics#4e972f60d67eb782a35bf9c5359ca090b9f3794f",
     "prismarine-recipe": "github:aibengineering/prismarine-recipe#542f0600f5ddf07bb16df67fa1ac06e603bd28e0",
     "prismarine-registry": "^1.10.0",
     "prismarine-windows": "^2.9.0",

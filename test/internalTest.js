@@ -432,6 +432,85 @@ for (const supportedVersion of mineflayer.testedVersions) {
           })
         })
       })
+      it('tells the server sprinting stopped while an item is in use with itemUseSlowdown', (done) => {
+        const sprintActions = []
+        server.on('playerJoin', (client) => {
+          client.on('entity_action', (packet) => {
+            if ([3, 4, 'start_sprinting', 'stop_sprinting'].includes(packet.actionId)) {
+              sprintActions.push(packet.actionId === 3 || packet.actionId === 'start_sprinting' ? 'start' : 'stop')
+            }
+          })
+          client.write('login', bot.test.generateLoginPacket())
+          const chunk = bot.test.buildChunk()
+          chunk.setBlockType(pos, goldId)
+          client.write('map_chunk', generateChunkPacket(chunk))
+          client.write('position', {
+            x: 1.5,
+            y: pos.y + 1,
+            z: 1.5,
+            pitch: 0,
+            yaw: 0,
+            flags: bot.supportFeature('positionPacketHasBitflags') ? { x: false, y: false, z: false, yaw: false, pitch: false } : 0,
+            teleportId: 0
+          })
+        })
+        bot.once('forcedMove', async () => {
+          try {
+            bot.physics.itemUseSlowdown = true
+            bot.setControlState('sprint', true)
+            await bot.waitForTicks(2)
+            bot.usingHeldItem = true
+            await bot.waitForTicks(2)
+            bot.setControlState('sprint', false)
+            bot.setControlState('sprint', true)
+            await bot.waitForTicks(2)
+            bot.usingHeldItem = false
+            await bot.waitForTicks(2)
+            await sleep(100)
+            assert.deepStrictEqual(sprintActions, ['start', 'stop', 'start'])
+            done()
+          } catch (err) {
+            done(err)
+          }
+        })
+      })
+      it('follows the sprint control while an item is in use without itemUseSlowdown', (done) => {
+        const sprintActions = []
+        server.on('playerJoin', (client) => {
+          client.on('entity_action', (packet) => {
+            if ([3, 4, 'start_sprinting', 'stop_sprinting'].includes(packet.actionId)) {
+              sprintActions.push(packet.actionId === 3 || packet.actionId === 'start_sprinting' ? 'start' : 'stop')
+            }
+          })
+          client.write('login', bot.test.generateLoginPacket())
+          const chunk = bot.test.buildChunk()
+          chunk.setBlockType(pos, goldId)
+          client.write('map_chunk', generateChunkPacket(chunk))
+          client.write('position', {
+            x: 1.5,
+            y: pos.y + 1,
+            z: 1.5,
+            pitch: 0,
+            yaw: 0,
+            flags: bot.supportFeature('positionPacketHasBitflags') ? { x: false, y: false, z: false, yaw: false, pitch: false } : 0,
+            teleportId: 0
+          })
+        })
+        bot.once('forcedMove', async () => {
+          try {
+            bot.usingHeldItem = true
+            bot.setControlState('sprint', true)
+            await bot.waitForTicks(2)
+            bot.setControlState('sprint', false)
+            await bot.waitForTicks(2)
+            await sleep(100)
+            assert.deepStrictEqual(sprintActions, ['start', 'stop'])
+            done()
+          } catch (err) {
+            done(err)
+          }
+        })
+      })
       it('no movement packets during a server transfer configuration phase', function (done) {
         // Regression test for https://github.com/PrismarineJS/mineflayer/issues/3776
         // While the client is in the configuration phase (Velocity/BungeeCord server
