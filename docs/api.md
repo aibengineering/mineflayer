@@ -1053,6 +1053,8 @@ Number in the range [0, 20] representing the number of water-icons known as oxyg
 Edit these numbers to tweak gravity, jump speed, terminal velocity, etc.
 Do this at your own risk.
 
+Set `bot.physics.itemUseSlowdown` to `true` to move as the vanilla client does while an item is in use: a fifth of the speed, and no sprinting except in water. The server is told the bot stopped sprinting. It defaults to `false`.
+
 #### bot.fireworkRocketDuration
 
 How many physics ticks worth of firework rocket boost are left.

@@ -549,6 +549,8 @@ export interface PhysicsOptions {
   sprintSpeed: number
   maxGroundSpeedSoulSand: number
   maxGroundSpeedWater: number
+  /** Slow and stop sprinting while an item is in use, as the vanilla client does (prismarine-physics). */
+  itemUseSlowdown: boolean
 }
 
 export interface Time {
